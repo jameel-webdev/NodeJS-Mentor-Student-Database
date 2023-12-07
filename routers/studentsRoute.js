@@ -12,7 +12,7 @@ router.route("/").post(async (req, res) => {
     const student = new Student({ name });
     await student.save();
 
-    res.status(201).json({ message: `New Student Added to Database` });
+    res.status(201).json({ student, message: `New Student Added to Database` });
   } catch (error) {
     res.status(500).json({ error: `Student Details Invalid` });
   }

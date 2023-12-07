@@ -21,6 +21,11 @@ app.use("/mentors", mentors);
 app.use("/students", students);
 
 /* Listiening On */
+app.get("/", (req, res) => {
+  res.json({
+    message: `Welcome to NodeJS Mentor Student Assigning Database API`,
+  });
+});
 app.listen(port, (req, res) => {
   console.log(`Server is running on port ${port}`);
 });
