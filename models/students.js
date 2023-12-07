@@ -8,7 +8,6 @@ const studentSchema = new mongoose.Schema({
   mentor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Mentor",
-    default: null,
   },
 });
 

@@ -7,41 +7,70 @@ const router = express.Router();
 
 // API to Create Mentor
 router.route("/").post(async (req, res) => {
-  try {
-    const { name } = req.body;
-    const mentor = new Mentor({ name });
-    await mentor.save();
+  const { name } = req.body;
 
-    res.status(201).json({ message: `New Mentor Added to Database` });
+  try {
+    const newMentor = new Mentor({ name });
+    const savedMentor = await newMentor.save();
+
+    res.status(201).json(savedMentor);
   } catch (error) {
-    res.status(500).json({ error: `Mentor Details Invalid` });
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// List of mentors and the unassigned students
+router.route("/").get(async (req, res) => {
+  try {
+    const mentors = await Mentor.find();
+    const unassignedStudents = await Student.find({ mentor: null });
+    res.json({ mentors, unassignedStudents });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // Assign Students to Mentor
-router.route("/:mentorid/students").post(async (req, res) => {
-  const { mentorid } = req.params;
-  const { studentIds } = req.body;
+router.route("/:mentorId/assign").put(async (req, res) => {
+  const mentorId = req.params.mentorId;
+  const studentId = req.body.studentId;
 
   try {
-    const mentor = await Mentor.findById(mentorid);
-    const students = await Student.find({ _id: { $in: studentIds } });
+    const mentor = await Mentor.findById(mentorId);
+    const student = await Student.findById(studentId);
 
-    if (!mentor || students.length !== studentIds.length) {
-      return res.status(404).json({ error: "Mentor or students not found" });
+    if (!mentor || !student) {
+      return res.status(404).json({ error: "Mentor or student not found" });
     }
 
-    mentor.students.push(...students);
+    // Assign student to mentor
+    mentor.students.push(student);
+    student.mentor = mentor;
+
     await mentor.save();
+    await student.save();
 
-    students.forEach(async (student) => {
-      student.mentor = mentor;
-      await student.save();
-    });
-
-    res.json({ message: "Students assigned successfully" });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to assign students" });
+    res.json({ mentor, student });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// Show all students for a particular mentor
+router.route("/:mentorId/students").get(async (req, res) => {
+  const mentorId = req.params.mentorId;
+
+  try {
+    const mentor = await Mentor.findById(mentorId);
+
+    if (!mentor) {
+      return res.status(404).json({ error: "Mentor not found" });
+    }
+
+    res.json(mentor.students);
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;
